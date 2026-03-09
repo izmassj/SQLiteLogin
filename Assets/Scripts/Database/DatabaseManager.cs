@@ -1,84 +1,78 @@
-using UnityEngine;
-using Mono.Data.Sqlite;
-using System.Data;
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using SQLite4Unity3d;
+using UnityEngine;
 
 public class DatabaseManager : MonoBehaviour
 {
     private static DatabaseManager _instance;
     public static DatabaseManager Instance { get { return _instance; } }
 
-    private string connectionString;
-    private string dbPath;
+    [Header("Database")]
+    [SerializeField] private string databaseName = "users.db";
+
+    private SQLiteConnection _connection;
+    private string _databasePath;
+
+    public string DatabasePath { get { return _databasePath; } }
 
     private void Awake()
     {
         if (_instance != null && _instance != this)
         {
             Destroy(gameObject);
+            return;
         }
-        else
-        {
-            _instance = this;
-            DontDestroyOnLoad(gameObject);
-            InitializeDatabase();
-        }
+
+        _instance = this;
+        DontDestroyOnLoad(gameObject);
+
+        InitializeDatabase();
     }
 
     private void InitializeDatabase()
     {
-        dbPath = Path.Combine(Application.persistentDataPath, "users.db");
-        connectionString = "URI=file:" + dbPath;
+        _databasePath = Path.Combine(Application.persistentDataPath, databaseName);
+        _connection = new SQLiteConnection(_databasePath, false);
+        _connection.CreateTable<User>();
 
-        CreateUsersTable();
-        Debug.Log("Database initialized at: " + dbPath);
+        Debug.Log("Database initialized at: " + _databasePath);
     }
 
-    private void CreateUsersTable()
-    {
-        using (var conn = new SqliteConnection(connectionString))
-        {
-            conn.Open();
-
-            using (var cmd = conn.CreateCommand())
-            {
-                cmd.CommandText = @"CREATE TABLE IF NOT EXISTS Users (UserID INTEGER PRIMARY KEY AUTOINCREMENT, Username TEXT UNIQUE NOT NULL, Password TEXT NOT NULL, CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP)";
-                cmd.ExecuteNonQuery();
-            }
-
-            conn.Close();
-        }
-    }
-
-    // Método para registrar nuevo usuario
     public bool RegisterUser(string username, string password)
     {
+        username = username.Trim();
+
+        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+        {
+            return false;
+        }
+
         if (password.Length < 8)
+        {
+            return false;
+        }
+
+        if (UserExists(username))
         {
             return false;
         }
 
         try
         {
-            using (var conn = new SqliteConnection(connectionString))
-            {
-                conn.Open();
+            User newUser = new User();
+            newUser.Username = username;
+            newUser.Password = password;
+            newUser.CreatedDate = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
 
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "INSERT INTO Users (Username, Password) VALUES (@username, @password)";
-                    cmd.Parameters.Add(new SqliteParameter("@username", username));
-                    cmd.Parameters.Add(new SqliteParameter("@password", password));
-                    cmd.ExecuteNonQuery();
-                }
-
-                conn.Close();
-            }
+            _connection.Insert(newUser);
             return true;
         }
-        catch (SqliteException ex)
+        catch (Exception ex)
         {
-            Debug.LogError("Registration error: " + ex.Message);
+            Debug.LogError("Register error: " + ex.Message);
             return false;
         }
     }
@@ -87,31 +81,17 @@ public class DatabaseManager : MonoBehaviour
     {
         try
         {
-            using (var conn = new SqliteConnection(connectionString))
+            User user = _connection.Table<User>()
+                .FirstOrDefault(x => x.Username == username && x.Password == password);
+
+            if (user != null)
             {
-                conn.Open();
-
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "SELECT UserID FROM Users WHERE Username = @username AND Password = @password";
-                    cmd.Parameters.Add(new SqliteParameter("@username", username));
-                    cmd.Parameters.Add(new SqliteParameter("@password", password));
-
-                    using (IDataReader reader = cmd.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            int userId = reader.GetInt32(0);
-                            return (true, userId);
-                        }
-                    }
-                }
-
-                conn.Close();
+                return (true, user.UserID);
             }
+
             return (false, -1);
         }
-        catch (SqliteException ex)
+        catch (Exception ex)
         {
             Debug.LogError("Login error: " + ex.Message);
             return (false, -1);
@@ -120,20 +100,62 @@ public class DatabaseManager : MonoBehaviour
 
     public bool UserExists(string username)
     {
-        using (var conn = new SqliteConnection(connectionString))
+        try
         {
-            conn.Open();
+            User user = _connection.Table<User>()
+                .FirstOrDefault(x => x.Username == username);
 
-            using (var cmd = conn.CreateCommand())
+            return user != null;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("UserExists error: " + ex.Message);
+            return false;
+        }
+    }
+
+    public List<User> GetAllUsers()
+    {
+        try
+        {
+            return _connection.Table<User>()
+                .OrderBy(x => x.UserID)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("GetAllUsers error: " + ex.Message);
+            return new List<User>();
+        }
+    }
+
+    public bool DeleteUser(int userId)
+    {
+        try
+        {
+            User user = _connection.Find<User>(userId);
+
+            if (user == null)
             {
-                cmd.CommandText = "SELECT COUNT(*) FROM Users WHERE Username = @username";
-                cmd.Parameters.Add(new SqliteParameter("@username", username));
-
-                int count = System.Convert.ToInt32(cmd.ExecuteScalar());
-                conn.Close();
-
-                return count > 0;
+                return false;
             }
+
+            _connection.Delete(user);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("DeleteUser error: " + ex.Message);
+            return false;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (_connection != null)
+        {
+            _connection.Dispose();
+            _connection = null;
         }
     }
 }

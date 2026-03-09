@@ -1,7 +1,6 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement;
-using TMPro;
 
 public class RegisterManager : MonoBehaviour
 {
@@ -16,8 +15,15 @@ public class RegisterManager : MonoBehaviour
 
     private void Start()
     {
-        registerButton.onClick.AddListener(OnRegisterClicked);
-        loginButton.onClick.AddListener(OnLoginClicked);
+        if (registerButton != null && registerButton.onClick.GetPersistentEventCount() == 0)
+        {
+            registerButton.onClick.AddListener(OnRegisterClicked);
+        }
+
+        if (loginButton != null && loginButton.onClick.GetPersistentEventCount() == 0)
+        {
+            loginButton.onClick.AddListener(OnLoginClicked);
+        }
     }
 
     private void OnRegisterClicked()
@@ -26,7 +32,7 @@ public class RegisterManager : MonoBehaviour
         string password = passwordInput.text;
         string confirmPassword = confirmPasswordInput.text;
 
-        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(confirmPassword))
         {
             ShowError("Por favor, completa todos los campos");
             return;
@@ -34,13 +40,19 @@ public class RegisterManager : MonoBehaviour
 
         if (password.Length < 8)
         {
-            ShowError("La contraseña debe tener al menos 8 caracteres");
+            ShowError("La contraseÃ±a debe tener al menos 8 caracteres");
             return;
         }
 
         if (password != confirmPassword)
         {
-            ShowError("Las contraseñas no coinciden");
+            ShowError("Las contraseÃ±as no coinciden");
+            return;
+        }
+
+        if (DatabaseManager.Instance == null)
+        {
+            ShowError("No se encontrÃ³ la base de datos en la escena");
             return;
         }
 
@@ -54,7 +66,10 @@ public class RegisterManager : MonoBehaviour
 
         if (success)
         {
-            VisibilityManager.Instance.ChangeToLogin();
+            if (VisibilityManager.Instance != null)
+            {
+                VisibilityManager.Instance.ChangeToLogin();
+            }
         }
         else
         {
@@ -64,14 +79,27 @@ public class RegisterManager : MonoBehaviour
 
     private void OnLoginClicked()
     {
-        VisibilityManager.Instance.ChangeToLogin();
+        if (VisibilityManager.Instance != null)
+        {
+            VisibilityManager.Instance.ChangeToLogin();
+        }
     }
 
     private void ShowError(string message)
     {
-        errorMessage.text = message;
-        errorPopup.SetActive(true);
+        if (errorMessage != null)
+        {
+            errorMessage.text = message;
+        }
 
-        VisibilityManager.Instance.ChangeToError();
+        if (errorPopup != null)
+        {
+            errorPopup.SetActive(true);
+        }
+
+        if (VisibilityManager.Instance != null)
+        {
+            VisibilityManager.Instance.ChangeToError();
+        }
     }
 }

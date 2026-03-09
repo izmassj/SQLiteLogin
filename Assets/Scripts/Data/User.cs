@@ -1,8 +1,19 @@
-[System.Serializable]
+using System;
+using SQLite4Unity3d;
+
+[Serializable]
+[Table("Users")]
 public class User
 {
-    public int UserID;
-    public string Username;
-    public string Password;
-    public string CreatedDate;
+    [PrimaryKey, AutoIncrement]
+    public int UserID { get; set; }
+
+    [Unique, NotNull]
+    public string Username { get; set; }
+
+    [NotNull]
+    public string Password { get; set; }
+
+    [NotNull]
+    public string CreatedDate { get; set; }
 }

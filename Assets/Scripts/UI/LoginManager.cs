@@ -1,8 +1,6 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
-using UnityEngine.SceneManagement;
-using DG.Tweening;
 
 public class LoginManager : MonoBehaviour
 {
@@ -16,11 +14,20 @@ public class LoginManager : MonoBehaviour
 
     private void Start()
     {
-        loginButton.onClick.AddListener(OnLoginClicked);
-        registerButton.onClick.AddListener(OnRegisterClicked);
+        if (loginButton != null && loginButton.onClick.GetPersistentEventCount() == 0)
+        {
+            loginButton.onClick.AddListener(OnLoginClicked);
+        }
+
+        if (registerButton != null && registerButton.onClick.GetPersistentEventCount() == 0)
+        {
+            registerButton.onClick.AddListener(OnRegisterClicked);
+        }
 
         if (usernameInput != null)
+        {
             usernameInput.Select();
+        }
     }
 
     private void OnLoginClicked()
@@ -28,10 +35,15 @@ public class LoginManager : MonoBehaviour
         string username = usernameInput.text.Trim();
         string password = passwordInput.text;
 
-        // Validaciones b·sicas
         if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
         {
             ShowError("Por favor, completa todos los campos");
+            return;
+        }
+
+        if (DatabaseManager.Instance == null)
+        {
+            ShowError("No se encontr√≥ la base de datos en la escena");
             return;
         }
 
@@ -43,25 +55,46 @@ public class LoginManager : MonoBehaviour
             PlayerPrefs.SetString("CurrentUsername", username);
             PlayerPrefs.Save();
 
-            VisibilityManager.Instance.ChangeToMainScene();
+            if (MainSceneManager.Instance != null)
+            {
+                MainSceneManager.Instance.PrepareMainPanel();
+            }
+
+            if (VisibilityManager.Instance != null)
+            {
+                VisibilityManager.Instance.ChangeToMainScene();
+            }
         }
         else
         {
-            ShowError("Usuario no encontrado o contraseÒa incorrecta");
+            ShowError("Usuario no encontrado o contrase√±a incorrecta");
         }
     }
 
     private void OnRegisterClicked()
     {
-        VisibilityManager.Instance.ChangeToRegister();
+        if (VisibilityManager.Instance != null)
+        {
+            VisibilityManager.Instance.ChangeToRegister();
+        }
     }
 
     private void ShowError(string message)
     {
-        errorMessage.text = message;
-        errorPopup.SetActive(true);
+        if (errorMessage != null)
+        {
+            errorMessage.text = message;
+        }
 
-        VisibilityManager.Instance.ChangeToError();
+        if (errorPopup != null)
+        {
+            errorPopup.SetActive(true);
+        }
+
+        if (VisibilityManager.Instance != null)
+        {
+            VisibilityManager.Instance.ChangeToError();
+        }
     }
 
     private void Update()

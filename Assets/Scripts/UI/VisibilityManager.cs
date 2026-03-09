@@ -26,7 +26,7 @@ public class VisibilityManager : MonoBehaviour
     public GameObject mainScenePanel;
     public CanvasGroup mainSceneCanvasGroup;
     public GameObject mainSceneFullLayout;
-
+    Tween currentTween;
     public static VisibilityManager Instance { get; private set; }
 
     private void Awake()
@@ -46,8 +46,9 @@ public class VisibilityManager : MonoBehaviour
         loginPanel.SetActive(false);
         mainPanel.GetComponent<RectTransform>().DOSizeDelta(registerVerticalLayout.GetComponent<RectTransform>().sizeDelta, 0.25f).OnComplete(() =>
         {
+            if (currentTween != null) currentTween.Complete(true);
             registerPanel.SetActive(true);
-            registerCanvasGroup.DOFade(1, 0.25f);
+            currentTween = registerCanvasGroup.DOFade(1, 0.25f);
         });
     }
 
