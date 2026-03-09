@@ -39,6 +39,8 @@ public class DatabaseManager : MonoBehaviour
         _connection.CreateTable<User>();
 
         Debug.Log("Database initialized at: " + _databasePath);
+
+        CreateDefaultUser();
     }
 
     public bool RegisterUser(string username, string password)
@@ -156,6 +158,25 @@ public class DatabaseManager : MonoBehaviour
         {
             _connection.Dispose();
             _connection = null;
+        }
+    }
+
+    private void CreateDefaultUser()
+    {
+        User existingUser = _connection.Table<User>()
+            .FirstOrDefault(u => u.Username == "admin");
+
+        if (existingUser == null)
+        {
+            User defaultUser = new User
+            {
+                Username = "admin",
+                Password = "12345678",
+                CreatedDate = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+            };
+
+            _connection.Insert(defaultUser);
+            Debug.Log("Usuario por defecto creado: admin / 1234");
         }
     }
 }

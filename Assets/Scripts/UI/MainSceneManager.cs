@@ -11,7 +11,6 @@ public class MainSceneManager : MonoBehaviour
     public TMP_Text welcomeText;
     public Button logoutButton;
     public Button showUsersButton;
-    public GameObject mainContentPanel;
 
     [Header("Users View")]
     public GameObject usersPanel;
@@ -53,11 +52,6 @@ public class MainSceneManager : MonoBehaviour
         if (usersPanel != null)
         {
             usersPanel.SetActive(false);
-        }
-
-        if (mainContentPanel != null)
-        {
-            mainContentPanel.SetActive(true);
         }
 
         if (userRowTemplate != null)
@@ -103,17 +97,15 @@ public class MainSceneManager : MonoBehaviour
 
     public void ShowUsersPanel()
     {
-        if (mainContentPanel != null)
+        if (usersPanel.activeInHierarchy)
         {
-            mainContentPanel.SetActive(false);
+            usersPanel.SetActive(false);
         }
-
-        if (usersPanel != null)
+        else
         {
             usersPanel.SetActive(true);
+            RefreshUsersList();
         }
-
-        RefreshUsersList();
     }
 
 

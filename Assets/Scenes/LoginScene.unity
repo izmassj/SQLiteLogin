@@ -9667,7 +9667,6 @@ MonoBehaviour:
   welcomeText: {fileID: 331617290}
   logoutButton: {fileID: 1176291102}
   showUsersButton: {fileID: 949037156}
-  mainContentPanel: {fileID: 1709554925}
   usersPanel: {fileID: 1709554925}
   refreshButton: {fileID: 1516745787}
   usersContent: {fileID: 1436477150}
